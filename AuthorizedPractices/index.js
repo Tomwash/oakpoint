@@ -23,7 +23,6 @@ module.exports = async function (context, req) {
 
     const response = await fetch(url);
     const json = await response.json();
-    context.log(json);
 
     context.log('Writing to SQL Database');
 
@@ -31,10 +30,8 @@ module.exports = async function (context, req) {
 
     const practicesTable = 'dbo.practices';
 
-    context.log(json[0].items.length);
     for (let i = 0; i < json[0].items.length; i += 1) {
         const practice = json[0].items[i];
-        context.log(practice);
         const query = `INSERT INTO ${practicesTable} (PracticeID, JSON) VALUES (${practice.practice_id}, '${JSON.stringify(practice)}')`;
 
         context.log(query);
