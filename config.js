@@ -11,7 +11,11 @@ module.exports = {
         },
     },
     sikkaApiConfig: {
-        appId: process.env['APP_ID'],
-        appKey: process.env['APP_KEY'],
-    }
+        baseUrl: 'https://api.sikkasoft.com/',
+        authUrl: 'https://api.sikkasoft.com/auth/',
+        version: 'v2/',
+        app_id: process.env['APP_ID'],
+        app_key: process.env['APP_KEY'],
+    },
+
 }
