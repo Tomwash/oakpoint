@@ -63,7 +63,7 @@ async function dataCheck(request_key) {
 }
 
 async function getBaseResourceByRequestKey(request_key, resourceUri) {
-    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key })}`;
+    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 1 })}`;
     return get(url);
 }
 
