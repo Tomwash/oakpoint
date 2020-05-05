@@ -63,8 +63,36 @@ async function dataCheck(request_key) {
 }
 
 async function getBaseResourceByRequestKey(request_key, resourceUri) {
-    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 1 })}`;
-    return get(url);
+
+    let data;
+    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 0 })}`;
+    data = await get(url);
+
+    if (data) {
+        data = data[0];
+        const items = data.items;
+
+        if (data && data.pagination) {
+            while (data.pagination.next) {
+                const nextUrl = `${data.pagination.next}&request_key=${request_key}`;
+                try {
+                    console.log('getting data', nextUrl);
+                    data = await get(nextUrl)
+                } catch (err) {
+                    console.log(err);
+                }
+                data = data[0];
+                data.items.forEach((item) => {
+                    items.push(item);
+                })
+            }
+        }
+        console.log(items.length);
+        return items;
+    }
+
+    return [];
+
 }
 
 module.exports = {
