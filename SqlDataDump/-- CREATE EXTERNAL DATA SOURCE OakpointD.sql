@@ -9,7 +9,7 @@
 
 -- drop external data source OakpointDataV12030
 
-DECLARE @columnsCreateTable nvarchar(max) = N'ID INT IDENTITY(1,1), ';
+DECLARE @columnsCreateTable nvarchar(max) = N'ID INT';
 DECLARE @columns nvarchar(max) = N'';
 DECLARE @schema nvarchar(max) = N'';
 DECLARE @stm nvarchar(max);
@@ -23,11 +23,11 @@ declare @json nvarchar(max) =
         SELECT
     CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData
 FROM
-    OPENROWSET(BULK 'oakpoint-data/D18336/accounts_receivables.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob
+    OPENROWSET(BULK 'oakpoint-data/D18336/claims.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob
     );
 
 SELECT
-    @columnsCreateTable = CONCAT(@columnsCreateTable, N',', QUOTENAME('col_' + jd.[key]), N' varchar(8000) '),
+    @columnsCreateTable = CONCAT(@columnsCreateTable, N',', QUOTENAME('col_' + jd.[key])),
     @columns = CONCAT(@columns, N',', QUOTENAME('col_' + jd.[key])),
     -- @columns = CONCAT(@columns, N',', QUOTENAME('updated_at')),
     -- @columns = CONCAT(@columns, N',', QUOTENAME('office_id')),
@@ -60,7 +60,7 @@ SET @stm = CONCAT(
     N'      SELECT',
     N'          CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData ',
     N'      FROM ',
-    N'      OPENROWSET(BULK ''oakpoint-data/D18336/accounts_receivables.json'', DATA_SOURCE = ''OakpointDataV1'', SINGLE_CLOB) AS AzureBlob ',
+    N'      OPENROWSET(BULK ''oakpoint-data/D18336/' + @tableName + '.json'', DATA_SOURCE = ''OakpointDataV1'', SINGLE_CLOB) AS AzureBlob ',
     N'  ); ',
     N' ',
     N' MERGE ',
@@ -98,3 +98,14 @@ PRINT @stm;
 -- EXEC sp_executesql @stm;
 
 -- select * from claims
+
+
+select top 100
+    *
+from accounts_receivables
+where office_id = 'D18336'
+
+select top 100
+    *
+from claims
+where office_id = 'D18336'

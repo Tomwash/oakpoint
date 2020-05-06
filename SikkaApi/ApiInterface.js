@@ -62,17 +62,22 @@ async function dataCheck(request_key) {
     return get(url);
 }
 
-async function getBaseResourceByRequestKey(request_key, resourceUri) {
+async function getBaseResourceByRequestKey(request_key, resourceUri, limit = 5000, offset = 0, paginate = true) {
 
     let data;
-    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 0 })}`;
-    data = await get(url);
+    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit, offset })}`;
+    try {
+        data = await get(url);
+    } catch (err) {
+        console.log("WARNING: ERROR IN MAIN REQUEST, PROBABLY A 204", data, err)
+        return [];
+    }
 
-    if (data) {
+    if (data[0]) {
         data = data[0];
         const items = data.items;
 
-        if (data && data.pagination) {
+        if (data && data.pagination && paginate) {
             while (data.pagination.next) {
                 const nextUrl = `${data.pagination.next}&request_key=${request_key}`;
                 try {
