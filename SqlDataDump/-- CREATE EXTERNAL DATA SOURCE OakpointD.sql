@@ -105,7 +105,7 @@ select top 100
 from accounts_receivables
 where office_id = 'D18336'
 
-select top 100
+select
     *
 from claims
 where office_id = 'D18336'

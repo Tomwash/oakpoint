@@ -117,7 +117,14 @@ module.exports = async function (context, req) {
                             WITH  
                             (
                                     ${withOpenJson}
-                            ) 
+                            );
+
+                        WITH CTE AS(
+                            SELECT col_href,
+                                RN = ROW_NUMBER()OVER(PARTITION BY col_href ORDER BY col_href)
+                            FROM @TableView
+                        )
+                        DELETE FROM CTE WHERE RN > 1
                          
                         MERGE ${tableName} original
                         USING @TableView modified
@@ -149,7 +156,7 @@ module.exports = async function (context, req) {
                         CREATE UNIQUE INDEX col_href
                         ON ${tableName} (col_href)
 
-                        CREATE INDEX col_href
+                        CREATE INDEX non_unique_office_metadata
                         ON ${tableName} (office_id, practice_name, created_at, updated_at)
                         END
                         `
@@ -162,14 +169,11 @@ module.exports = async function (context, req) {
                 catch (err) {
                     context.log(err);
                 }
+                if (tableName === 'claims') { context.log(query); }
                 pool.query(query).catch((err) => {
                     context.log('error during query execution');
                     // pool.close().catch(err => context.log('error during closing conn', err))
                 });
-                context.log('timing out 3000')
-                setTimeout(() => {
-                    context.log('timing out complete')
-                }, 3000)
             } else {
                 context.log('NO DATA')
             }
