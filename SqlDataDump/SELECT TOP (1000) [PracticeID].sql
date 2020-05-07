@@ -1,5 +1,0 @@
-SELECT TOP (1000) [PracticeID]
-      ,[JSON]
-  FROM [dbo].[practices]
-
-  INSERT INTO dbo.practices (PracticeID, JSON) VALUES (1, '{"office_id":"D18336","domain":"Dental","href":"https://api.sikkasoft.com/auth/v2/authorized_practices/D18336","secret_key":"3E71453AD1837374RCVG","practice_name":"west cary dental","address":"351 wellesley trade ln 211","city":"cary","state":"nc","zip":"27519","practice_management_system":"EagleSoft","financial_system":"","practice_management_system_refresh_date":"2020-01-18 02:07:23","data_synchronization_date":"2020-01-18 02:17:47","data_insert_date":"2020-01-18 02:38:10","practice_management_system_version":"V19.0","practice_management_system_refresh_date_time_zone":"Eastern Standard Time","practice_id":"1","partner_id":"","financial_system_refresh_date":"1900-01-01 00:00:00","financial_system_version":""}')

@@ -9,6 +9,11 @@ module.exports = {
         options: {
             encrypt: true
         },
+        requestTimeout: 60000
+    },
+    azureStorageConfig: {
+        connectionString: process.env['AzureWebJobsStorage'],
+        containerName: 'oakpoint-data'
     },
     sikkaApiConfig: {
         baseUrl: 'https://api.sikkasoft.com/',
@@ -17,5 +22,27 @@ module.exports = {
         app_id: process.env['APP_ID'],
         app_key: process.env['APP_KEY'],
     },
+    tables: [
+        'accounts_receivables',
+        'appointments',
+        'claims',
+        'fee_schedules',
+        'guarantors',
+        'guarantors_v2',
+        'insurance_accounts_receivables',
+        'insurance_companies',
+        'insurance_company_details',
+        'patient_charts',
+        'patient_conditions',
+        'patients',
+        'payment_plans',
+        'payment_types',
+        'practice_variables',
+        'prescriptions_dental',
+        'procedure_codes',
+        'providers',
+        'reminders',
+        'treatment_plans'
+    ]
 
 }

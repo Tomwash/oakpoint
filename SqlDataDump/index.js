@@ -1,110 +1,141 @@
-const fetch = require("node-fetch");
-const sql = require("mssql");
-const queryString = require('query-string');
+const fs = require('fs');
+const { BlobServiceClient } = require('@azure/storage-blob');
 
 const { sikkaApi } = require('../SikkaApi');
 const config = require('../config');
 
 const {
-    azureSqlConfig
+    azureStorageConfig: {
+        connectionString,
+        containerName
+    },
+    tables
 } = config;
 
-module.exports = async function (context, req) {
-
+module.exports = async function (context) {
     context.log('JavaScript Authorized Practices function processed a request.');
 
-    const pool = new sql.ConnectionPool(azureSqlConfig);
-    await pool.connect();
+    let authorizedPractices;
+    try {
+        authorizedPractices = await sikkaApi.authorizedPractices();
+    } catch (err) {
+        context.log(err);
+    }
 
-    const authorizedPractices = await sikkaApi.authorizedPractices();
+    if (!authorizedPractices) {
+        context.log('authorizedPractices returned no response');
+        context.log(authorizedPractices);
+        return;
+    }
 
     context.log(`Authorized Practices: ${authorizedPractices[0].total_count}`);
-    for (let i = 0; i < authorizedPractices[0].total_count; i += 1) {
-        // loop through all practices
+    const authorizedPracticesLimit = (authorizedPractices[0].total_count / 5000) < 1 ? (authorizedPractices[0].total_count % 5000) : 5000;
+
+    context.log(`STARTING JOB ${new Date().toISOString()}`)
+    for (let i = 0; i < authorizedPracticesLimit; i += 1) {
+        context.log(`LOOPING THROUGH PRACTICES, Index ${i} of ${authorizedPracticesLimit} ${new Date().toISOString()}`)
 
         const office = authorizedPractices[0].items[i];
-        const { office_id, secret_key } = office;
+        const { office_id, secret_key, practice_name } = office;
 
         // get request key
         context.log(`Retrieving Request Key for Office ${office_id}`);
         const request_key = await sikkaApi.requestKey(office_id, secret_key);
 
+        if (!request_key) {
+            context.log('Request Key returned no response');
+            context.log(request_key);
+            continue;
+        }
+
         // get practice's authorized endpoints
         context.log(`Retrieving Authorized Endpoints For ${office_id}, Using The Request Key`);
-        const data_check = await sikkaApi.dataCheck(request_key.request_key);
 
+        let data_check;
+        try {
+            data_check = await sikkaApi.dataCheck(request_key.request_key);
+        } catch (err) {
+            context.log(err);
+        }
+
+        if (!data_check) {
+            context.log('Data check returned no response');
+            context.log(data_check);
+            continue;
+        }
+
+        context.log(`Data check: ${data_check[0].total_count}`);
+        const dataCheckLimit = (data_check[0].total_count / 5000) < 1 ? (data_check[0].total_count % 5000) : 5000;
         // loop through each authorized endpoint for this practice and drop the data in sql
-        for (let dchk = 0; dchk < data_check[0].total_count; dchk += 1) {
+        for (let dchk = 0; dchk < dataCheckLimit; dchk += 1) {
+            context.log(`LOOPING THROUGH DATA CHECK, Index ${dchk} of ${dataCheckLimit} ${new Date().toISOString()}`)
+
             const { api, total_records, update_time } = data_check[0].items[dchk]
+
+            const tableName = api.replace('/', '__');
+            context.log(tableName);
+
+            // // This is used to more easily step through tables we care about
+            // if (!tables.includes(tableName)) {
+            //     context.log(`skipping table ${tableName}`);
+            //     continue;
+            // }
+
             if (total_records == "0") {
                 context.log(`There were no records for the ${api} api, total records: ${total_records}, last updated: ${update_time}`);
                 continue;
             }
 
-            const resourceResponse = await sikkaApi.getBaseResourceByRequestKey(request_key.request_key, api);
-            const tableName = api.replace('/', '__');
-
-            context.log('Writing to SQL Database');
-
-            for (let resourceIndex = 0; resourceIndex < resourceResponse[0].total_count; resourceIndex += 1) {
-                const data = resourceResponse[0].items[resourceIndex];
-
-                context.log(data);
-
-                if (data) {
-                    let valuesString = '';
-                    Object.keys(data).forEach(key => valuesString += `'${data[key] ? data[key].toString().replace(/'/g, "''") : ""}',`)
-
-                    let columns = '';
-                    Object.keys(data).forEach(key => columns += `[col_${key}], `)
-
-                    // const query = `INSERT INTO ${tableName} (${columns} DATA) VALUES (${valuesString} '${JSON.stringify(data)}')`
-                    const query = `INSERT INTO ${tableName} (${columns} DATA) VALUES (${valuesString} '${JSON.stringify(data).replace(/'/g, "''")}')`
-
-                    try {
-                        let columnsStringCreateTable = '';
-                        Object.keys(data).forEach(key => columnsStringCreateTable += `col_${key} varchar(max),`)
-
-                        if (tableName) {
-                            await pool.query(
-                                `
-                            IF (object_id('${tableName}', 'U') is null) BEGIN
-                            print 'Must create the table!';
-                            CREATE TABLE ${tableName} (
-                                    ID bigint NOT NULL PRIMARY KEY IDENTITY(1, 1),
-                                    ${columnsStringCreateTable}
-                                    DATA varchar(max)
-                                );
-                            END
-                        `
-                            );
-                        } else {
-                            throw new Error(tableName)
-                        }
-                    }
-                    catch (err) {
-                        context.log(err);
-                    }
-                    try {
-                        context.log(query);
-                        await pool.query(query);
-                    } catch (err) {
-                        context.log(err); await pool.close()
-                        return;
-                    }
-                } else {
-                    context.log('NO DATA')
-                    context.log(resourceIndex, resourceResponse[0]);
-                }
+            let resourceResponse;
+            try {
+                context.log(`FETCHING RESOURCE ${new Date().toISOString()}`)
+                resourceResponse = await sikkaApi.getBaseResourceByRequestKey(request_key.request_key, api);
+            } catch (err) {
+                context.log(err);
             }
+
+            // Create the BlobServiceClient object which will be used to create a container client
+            const blobServiceClient = await BlobServiceClient.fromConnectionString(connectionString);
+
+            // // Get a reference to a container
+            const containerClient = await blobServiceClient.getContainerClient(containerName);
+
+            // Get blob block client, used modifying blobs in azure storage
+            const blockBlobClient = await containerClient.getBlockBlobClient(`${office_id}/${tableName}.json`)
+            const dataStringified = JSON.stringify(resourceResponse);
+
+            context.log(`Creating file for upload ${new Date().toISOString()}`)
+            // Create file for office to store the JSON response and prep for upload
+            const fileLocation = `${office_id}`;
+            const fileName = `${tableName}.json`
+            const pathToFile = `${fileLocation}/${fileName}`
+
+            if (!fs.existsSync(fileLocation)) {
+                fs.mkdirSync(fileLocation);
+            }
+
+            fs.appendFileSync(pathToFile, dataStringified, (err) => {
+                if (err) {
+                    context.log(err);
+                }
+                context.log('It\'s saved!');
+            });
+
+            // Upload file will support files over 256MB by breaking it into multiple blocks for upload.
+            await blockBlobClient.uploadFile(pathToFile)
+
+            // Delete file we created
+            context.log(`Deleting the file we created ${new Date().toISOString()}`)
+            fs.unlinkSync(pathToFile, (err) => {
+                if (err) { context.log(err); }
+                context.log(`${pathToFile} was deleted`);
+            });
         }
     }
-
-    await pool.close();
 
     context.log('Process Complete:');
     context.res = {
         status: 200,
-        body: 'success'
+        body: '\n\nsuccess\n\n'
     };
 }
