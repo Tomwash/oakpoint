@@ -1,3 +1,4 @@
+const fs = require('fs');
 const fetch = require("node-fetch");
 const sql = require("mssql");
 const queryString = require('query-string');
@@ -25,6 +26,18 @@ module.exports = async function (context, req) {
         const office = authorizedPractices[0].items[i];
         const { office_id, secret_key, practice_name } = office;
 
+        // if ([
+        //     'D18336',
+        //     'D22072',
+        //     'D24510',
+        //     'D34723',
+        //     // 'O22046',
+        //     'V15543'
+        // ].includes(office_id)) {
+        //     context.log(`Skipping ${office_id}`);
+        //     continue;
+        // }
+
         // get request key
         context.log(`Retrieving Request Key for Office ${office_id}`);
         const request_key = await sikkaApi.requestKey(office_id, secret_key);
@@ -42,8 +55,12 @@ module.exports = async function (context, req) {
                 continue;
             }
 
-            const resourceResponse = await sikkaApi.getBaseResourceByRequestKey(request_key.request_key, api, 10, 0, false);
+            const resourceResponse = await sikkaApi.getBaseResourceByRequestKey(request_key.request_key, api, 5000, 0, false);
             const tableName = api.replace('/ ', '__');
+
+            // if (tableName === 'appointments') { context.log(resourceResponse); } else {
+            //     continue;
+            // }
 
             const data = resourceResponse[0];
 
@@ -143,6 +160,7 @@ module.exports = async function (context, req) {
                         );
                     `
 
+                // if (tableName === 'appointments') { context.log(query); }
                 try {
                     if (tableName) {
                         const tableCreateQuery = `
@@ -162,6 +180,23 @@ module.exports = async function (context, req) {
                         `
                         // context.log(tableCreateQuery);
                         await pool.query(tableCreateQuery);
+
+                        context.log(`Creating file for upload ${new Date().toISOString()}`)
+                        // Create file for office to store the JSON response and prep for upload
+                        const fileLocation = `${office_id}`;
+                        const fileName = `${tableName}.sql`
+                        const pathToFile = `${fileLocation}/${fileName}`
+
+                        if (!fs.existsSync(fileLocation)) {
+                            fs.mkdirSync(fileLocation);
+                        }
+
+                        fs.appendFileSync(pathToFile, query, (err) => {
+                            if (err) {
+                                context.log(err);
+                            }
+                            context.log('It\'s saved!');
+                        });
                     } else {
                         throw new Error(tableName)
                     }
@@ -169,7 +204,6 @@ module.exports = async function (context, req) {
                 catch (err) {
                     context.log(err);
                 }
-                if (tableName === 'claims') { context.log(query); }
                 pool.query(query).catch((err) => {
                     context.log('error during query execution');
                     // pool.close().catch(err => context.log('error during closing conn', err))

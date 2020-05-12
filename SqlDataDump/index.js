@@ -37,7 +37,17 @@ module.exports = async function (context) {
 
         const office = authorizedPractices[0].items[i];
         const { office_id, secret_key, practice_name } = office;
-
+        if ([
+            // 'D18336',
+            // 'D22072',
+            // 'D24510',
+            // 'D34723',
+            // // 'O22046',
+            // // 'V15543'
+        ].includes(office_id)) {
+            context.log(`Skipping ${office_id}`);
+            continue;
+        }
         // get request key
         context.log(`Retrieving Request Key for Office ${office_id}`);
         const request_key = await sikkaApi.requestKey(office_id, secret_key);
