@@ -43,8 +43,8 @@ module.exports = async function (context, req) {
         const request_key = await sikkaApi.requestKey(office_id, secret_key);
         console.log(request_key);
 
-        // get practice's authorized endpoints
-        context.log(`Retrieving Authorized Endpoints For ${office_id}, Using The Request Key`);
+        // get practice's request key info
+        context.log(`Retrieving Request Key Info ${office_id}, Using The Request Key`);
         const requestKeyInfo = await sikkaApi.requestKeyInfo(request_key.request_key);
         const listOfAccessibleApis = requestKeyInfo.scope.split(',')
 
@@ -180,7 +180,7 @@ module.exports = async function (context, req) {
                         await pool.query(tableCreateQuery);
 
                         // Create file for office to store the JSON response and prep for upload
-                        const fileLocation = `${office_id}`;
+                        const fileLocation = `sql/${office_id}`;
                         const fileName = `${tableName}.sql`
                         const pathToFile = `${fileLocation}/${fileName}`
 

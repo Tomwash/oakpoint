@@ -61,28 +61,19 @@ module.exports = async function (context) {
         // get practice's authorized endpoints
         context.log(`Retrieving Authorized Endpoints For ${office_id}, Using The Request Key`);
 
-        let data_check;
-        try {
-            data_check = await sikkaApi.dataCheck(request_key.request_key);
-        } catch (err) {
-            context.log(err);
-        }
+        // get practice's request key info
+        context.log(`Retrieving Request Key Info ${office_id}, Using The Request Key`);
+        const requestKeyInfo = await sikkaApi.requestKeyInfo(request_key.request_key);
+        const listOfAccessibleApis = requestKeyInfo.scope.split(',')
 
-        if (!data_check) {
-            context.log('Data check returned no response');
-            context.log(data_check);
-            continue;
-        }
-
-        context.log(`Data check: ${data_check[0].total_count}`);
-        const dataCheckLimit = (data_check[0].total_count / 5000) < 1 ? (data_check[0].total_count % 5000) : 5000;
         // loop through each authorized endpoint for this practice and drop the data in sql
-        for (let dchk = 0; dchk < dataCheckLimit; dchk += 1) {
-            context.log(`LOOPING THROUGH DATA CHECK, Index ${dchk} of ${dataCheckLimit} ${new Date().toISOString()}`)
+        for (let j = 0; j < listOfAccessibleApis.length; j += 1) {
+            if (['start', 'end'].includes(listOfAccessibleApis[j])) {
+                continue;
+            }
+            context.log(`LOOPING THROUGH DATA CHECK, Index ${j} of ${listOfAccessibleApis.length} ${new Date().toISOString()}`)
 
-            const { api, total_records, update_time } = data_check[0].items[dchk]
-
-            const tableName = api.replace('/', '__');
+            const tableName = listOfAccessibleApis[j].replace('/', '__');
             context.log(tableName);
 
             // // This is used to more easily step through tables we care about
@@ -91,15 +82,10 @@ module.exports = async function (context) {
             //     continue;
             // }
 
-            if (total_records == "0") {
-                context.log(`There were no records for the ${api} api, total records: ${total_records}, last updated: ${update_time}`);
-                continue;
-            }
-
             let resourceResponse;
             try {
                 context.log(`FETCHING RESOURCE ${new Date().toISOString()}`)
-                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, api, `streams/${office_id}/${tableName}.json`);
+                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `streams/${office_id}/${tableName}.json`);
             } catch (err) {
                 context.log(err);
             }
