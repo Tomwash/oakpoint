@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D24510/patient_conditions.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D24510/patient_conditions.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_patient_condition_id],[col_patient_id],[col_entered_date],[col_description],[col_surface],[col_provider_id],[col_tooth],[col_no_longer_present],[col_practice_id],[col_patient],[col_practice],[col_provider],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:06:13.088Z',
-                            '2020-05-12T01:06:13.088Z',
+                            '2020-05-18T02:37:15.991Z',
+                            '2020-05-18T02:37:15.991Z',
                             'D24510',
                             'Advanced Dental Center of Florence' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_patient_condition_id] = modified.[col_patient_condition_id],original.[col_patient_id] = modified.[col_patient_id],original.[col_entered_date] = modified.[col_entered_date],original.[col_description] = modified.[col_description],original.[col_surface] = modified.[col_surface],original.[col_provider_id] = modified.[col_provider_id],original.[col_tooth] = modified.[col_tooth],original.[col_no_longer_present] = modified.[col_no_longer_present],original.[col_practice_id] = modified.[col_practice_id],original.[col_patient] = modified.[col_patient],original.[col_practice] = modified.[col_practice],original.[col_provider] = modified.[col_provider],
-                        original.updated_at = '2020-05-12T01:06:13.088Z',
+                        original.updated_at = '2020-05-18T02:37:15.991Z',
                         original.office_id = 'D24510',
                         practice_name = 'Advanced Dental Center of Florence'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_patient_condition_id],modified.[col_patient_id],modified.[col_entered_date],modified.[col_description],modified.[col_surface],modified.[col_provider_id],modified.[col_tooth],modified.[col_no_longer_present],modified.[col_practice_id],modified.[col_patient],modified.[col_practice],modified.[col_provider],
-                        '2020-05-12T01:06:13.088Z',
-                        '2020-05-12T01:06:13.088Z',
+                        '2020-05-18T02:37:15.991Z',
+                        '2020-05-18T02:37:15.991Z',
                         'D24510',
                         'Advanced Dental Center of Florence'
                         );

@@ -37,17 +37,17 @@ module.exports = async function (context) {
 
         const office = authorizedPractices[0].items[i];
         const { office_id, secret_key, practice_name } = office;
-        if ([
-            // 'D18336',
-            // 'D22072',
-            // 'D24510',
-            // 'D34723',
-            // // 'O22046',
-            // // 'V15543'
-        ].includes(office_id)) {
-            context.log(`Skipping ${office_id}`);
-            continue;
-        }
+        // if ([
+        //     // 'D18336',
+        //     // 'D22072',
+        //     // 'D24510',
+        //     // 'D34723',
+        //     // // 'O22046',
+        //     // // 'V15543'
+        // ].includes(office_id)) {
+        //     context.log(`Skipping ${office_id}`);
+        //     continue;
+        // }
         // get request key
         context.log(`Retrieving Request Key for Office ${office_id}`);
         const request_key = await sikkaApi.requestKey(office_id, secret_key);
@@ -99,47 +99,10 @@ module.exports = async function (context) {
             let resourceResponse;
             try {
                 context.log(`FETCHING RESOURCE ${new Date().toISOString()}`)
-                resourceResponse = await sikkaApi.getBaseResourceByRequestKey(request_key.request_key, api);
+                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, api, `streams/${office_id}/${tableName}.json`);
             } catch (err) {
                 context.log(err);
             }
-
-            // Create the BlobServiceClient object which will be used to create a container client
-            const blobServiceClient = await BlobServiceClient.fromConnectionString(connectionString);
-
-            // // Get a reference to a container
-            const containerClient = await blobServiceClient.getContainerClient(containerName);
-
-            // Get blob block client, used modifying blobs in azure storage
-            const blockBlobClient = await containerClient.getBlockBlobClient(`${office_id}/${tableName}.json`)
-            const dataStringified = JSON.stringify(resourceResponse);
-
-            context.log(`Creating file for upload ${new Date().toISOString()}`)
-            // Create file for office to store the JSON response and prep for upload
-            const fileLocation = `${office_id}`;
-            const fileName = `${tableName}.json`
-            const pathToFile = `${fileLocation}/${fileName}`
-
-            if (!fs.existsSync(fileLocation)) {
-                fs.mkdirSync(fileLocation);
-            }
-
-            fs.appendFileSync(pathToFile, dataStringified, (err) => {
-                if (err) {
-                    context.log(err);
-                }
-                context.log('It\'s saved!');
-            });
-
-            // Upload file will support files over 256MB by breaking it into multiple blocks for upload.
-            await blockBlobClient.uploadFile(pathToFile)
-
-            // Delete file we created
-            context.log(`Deleting the file we created ${new Date().toISOString()}`)
-            fs.unlinkSync(pathToFile, (err) => {
-                if (err) { context.log(err); }
-                context.log(`${pathToFile} was deleted`);
-            });
         }
     }
 

@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D34723/payment_types.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D34723/payment_types.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_code],[col_description],[col_practice_id],[col_practice],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:07:44.757Z',
-                            '2020-05-12T01:07:44.757Z',
+                            '2020-05-18T02:47:04.202Z',
+                            '2020-05-18T02:47:04.202Z',
                             'D34723',
                             'Carolina Smiles' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_code] = modified.[col_code],original.[col_description] = modified.[col_description],original.[col_practice_id] = modified.[col_practice_id],original.[col_practice] = modified.[col_practice],
-                        original.updated_at = '2020-05-12T01:07:44.757Z',
+                        original.updated_at = '2020-05-18T02:47:04.202Z',
                         original.office_id = 'D34723',
                         practice_name = 'Carolina Smiles'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_code],modified.[col_description],modified.[col_practice_id],modified.[col_practice],
-                        '2020-05-12T01:07:44.757Z',
-                        '2020-05-12T01:07:44.757Z',
+                        '2020-05-18T02:47:04.202Z',
+                        '2020-05-18T02:47:04.202Z',
                         'D34723',
                         'Carolina Smiles'
                         );

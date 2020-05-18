@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D24510/procedure_codes.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D24510/procedure_codes.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_procedure_code],[col_procedure_code_description],[col_abbreaviation],[col_procedure_code_category],[col_practice_id],[col_procedure_code_category_id],[col_practice],[col_explosion_code],[col_submit_to_insurance],[col_allow_discount],[col_procedure_code_effect_on_patient_balance],[col_procedure_code_effect_on_provider_production],[col_procedure_code_effect_on_provider_collection],[col_procedure_code_type],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:06:40.402Z',
-                            '2020-05-12T01:06:40.402Z',
+                            '2020-05-18T02:37:49.890Z',
+                            '2020-05-18T02:37:49.890Z',
                             'D24510',
                             'Advanced Dental Center of Florence' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_procedure_code] = modified.[col_procedure_code],original.[col_procedure_code_description] = modified.[col_procedure_code_description],original.[col_abbreaviation] = modified.[col_abbreaviation],original.[col_procedure_code_category] = modified.[col_procedure_code_category],original.[col_practice_id] = modified.[col_practice_id],original.[col_procedure_code_category_id] = modified.[col_procedure_code_category_id],original.[col_practice] = modified.[col_practice],original.[col_explosion_code] = modified.[col_explosion_code],original.[col_submit_to_insurance] = modified.[col_submit_to_insurance],original.[col_allow_discount] = modified.[col_allow_discount],original.[col_procedure_code_effect_on_patient_balance] = modified.[col_procedure_code_effect_on_patient_balance],original.[col_procedure_code_effect_on_provider_production] = modified.[col_procedure_code_effect_on_provider_production],original.[col_procedure_code_effect_on_provider_collection] = modified.[col_procedure_code_effect_on_provider_collection],original.[col_procedure_code_type] = modified.[col_procedure_code_type],
-                        original.updated_at = '2020-05-12T01:06:40.402Z',
+                        original.updated_at = '2020-05-18T02:37:49.890Z',
                         original.office_id = 'D24510',
                         practice_name = 'Advanced Dental Center of Florence'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_procedure_code],modified.[col_procedure_code_description],modified.[col_abbreaviation],modified.[col_procedure_code_category],modified.[col_practice_id],modified.[col_procedure_code_category_id],modified.[col_practice],modified.[col_explosion_code],modified.[col_submit_to_insurance],modified.[col_allow_discount],modified.[col_procedure_code_effect_on_patient_balance],modified.[col_procedure_code_effect_on_provider_production],modified.[col_procedure_code_effect_on_provider_collection],modified.[col_procedure_code_type],
-                        '2020-05-12T01:06:40.402Z',
-                        '2020-05-12T01:06:40.402Z',
+                        '2020-05-18T02:37:49.890Z',
+                        '2020-05-18T02:37:49.890Z',
                         'D24510',
                         'Advanced Dental Center of Florence'
                         );

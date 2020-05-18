@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D34723/insurance_accounts_receivables.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D34723/insurance_accounts_receivables.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_patient_id],[col_amount_less_than_30],[col_amount_between_30_60],[col_amount_between_60_90],[col_amount_greater_than_90],[col_estimated_amount_less_than_30],[col_estimated_amount_between_30_60],[col_estimated_amount_between_60_90],[col_estimated_amount_greater_than_90],[col_patient],[col_practice_id],[col_practice],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:07:18.319Z',
-                            '2020-05-12T01:07:18.319Z',
+                            '2020-05-18T02:46:29.695Z',
+                            '2020-05-18T02:46:29.695Z',
                             'D34723',
                             'Carolina Smiles' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_patient_id] = modified.[col_patient_id],original.[col_amount_less_than_30] = modified.[col_amount_less_than_30],original.[col_amount_between_30_60] = modified.[col_amount_between_30_60],original.[col_amount_between_60_90] = modified.[col_amount_between_60_90],original.[col_amount_greater_than_90] = modified.[col_amount_greater_than_90],original.[col_estimated_amount_less_than_30] = modified.[col_estimated_amount_less_than_30],original.[col_estimated_amount_between_30_60] = modified.[col_estimated_amount_between_30_60],original.[col_estimated_amount_between_60_90] = modified.[col_estimated_amount_between_60_90],original.[col_estimated_amount_greater_than_90] = modified.[col_estimated_amount_greater_than_90],original.[col_patient] = modified.[col_patient],original.[col_practice_id] = modified.[col_practice_id],original.[col_practice] = modified.[col_practice],
-                        original.updated_at = '2020-05-12T01:07:18.319Z',
+                        original.updated_at = '2020-05-18T02:46:29.695Z',
                         original.office_id = 'D34723',
                         practice_name = 'Carolina Smiles'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_patient_id],modified.[col_amount_less_than_30],modified.[col_amount_between_30_60],modified.[col_amount_between_60_90],modified.[col_amount_greater_than_90],modified.[col_estimated_amount_less_than_30],modified.[col_estimated_amount_between_30_60],modified.[col_estimated_amount_between_60_90],modified.[col_estimated_amount_greater_than_90],modified.[col_patient],modified.[col_practice_id],modified.[col_practice],
-                        '2020-05-12T01:07:18.319Z',
-                        '2020-05-12T01:07:18.319Z',
+                        '2020-05-18T02:46:29.695Z',
+                        '2020-05-18T02:46:29.695Z',
                         'D34723',
                         'Carolina Smiles'
                         );

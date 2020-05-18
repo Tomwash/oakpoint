@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D34723/treatment_plans.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D34723/treatment_plans.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_plan_sr_no],[col_patient_id],[col_patient],[col_guarantor_id],[col_procedure_code],[col_description],[col_provider_id],[col_provider],[col_amount],[col_entry_date],[col_insurance_payment],[col_treatment_plan_status],[col_practice_id],[col_practice],[col_guarantor],[col_procedure_date],[col_tooth_from],[col_tooth_to],[col_surface],[col_clinical_condition_id],[col_collection_provider_id],[col_created_by],[col_appointment_sr_no],[col_last_updated_by],[col_primary_insurance_estimate],[col_secondary_insurance_estimate],[col_surface_quadrant_type],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:08:04.859Z',
-                            '2020-05-12T01:08:04.859Z',
+                            '2020-05-18T02:47:35.376Z',
+                            '2020-05-18T02:47:35.376Z',
                             'D34723',
                             'Carolina Smiles' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_plan_sr_no] = modified.[col_plan_sr_no],original.[col_patient_id] = modified.[col_patient_id],original.[col_patient] = modified.[col_patient],original.[col_guarantor_id] = modified.[col_guarantor_id],original.[col_procedure_code] = modified.[col_procedure_code],original.[col_description] = modified.[col_description],original.[col_provider_id] = modified.[col_provider_id],original.[col_provider] = modified.[col_provider],original.[col_amount] = modified.[col_amount],original.[col_entry_date] = modified.[col_entry_date],original.[col_insurance_payment] = modified.[col_insurance_payment],original.[col_treatment_plan_status] = modified.[col_treatment_plan_status],original.[col_practice_id] = modified.[col_practice_id],original.[col_practice] = modified.[col_practice],original.[col_guarantor] = modified.[col_guarantor],original.[col_procedure_date] = modified.[col_procedure_date],original.[col_tooth_from] = modified.[col_tooth_from],original.[col_tooth_to] = modified.[col_tooth_to],original.[col_surface] = modified.[col_surface],original.[col_clinical_condition_id] = modified.[col_clinical_condition_id],original.[col_collection_provider_id] = modified.[col_collection_provider_id],original.[col_created_by] = modified.[col_created_by],original.[col_appointment_sr_no] = modified.[col_appointment_sr_no],original.[col_last_updated_by] = modified.[col_last_updated_by],original.[col_primary_insurance_estimate] = modified.[col_primary_insurance_estimate],original.[col_secondary_insurance_estimate] = modified.[col_secondary_insurance_estimate],original.[col_surface_quadrant_type] = modified.[col_surface_quadrant_type],
-                        original.updated_at = '2020-05-12T01:08:04.859Z',
+                        original.updated_at = '2020-05-18T02:47:35.376Z',
                         original.office_id = 'D34723',
                         practice_name = 'Carolina Smiles'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_plan_sr_no],modified.[col_patient_id],modified.[col_patient],modified.[col_guarantor_id],modified.[col_procedure_code],modified.[col_description],modified.[col_provider_id],modified.[col_provider],modified.[col_amount],modified.[col_entry_date],modified.[col_insurance_payment],modified.[col_treatment_plan_status],modified.[col_practice_id],modified.[col_practice],modified.[col_guarantor],modified.[col_procedure_date],modified.[col_tooth_from],modified.[col_tooth_to],modified.[col_surface],modified.[col_clinical_condition_id],modified.[col_collection_provider_id],modified.[col_created_by],modified.[col_appointment_sr_no],modified.[col_last_updated_by],modified.[col_primary_insurance_estimate],modified.[col_secondary_insurance_estimate],modified.[col_surface_quadrant_type],
-                        '2020-05-12T01:08:04.859Z',
-                        '2020-05-12T01:08:04.859Z',
+                        '2020-05-18T02:47:35.376Z',
+                        '2020-05-18T02:47:35.376Z',
                         'D34723',
                         'Carolina Smiles'
                         );

@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D24510/guarantors.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D24510/guarantors.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_guarantor_id],[col_patient_id],[col_patient],[col_guarantor_s_patient_id],[col_guarantor_s_patient],[col_firstname],[col_middlename],[col_lastname],[col_preferred_name],[col_salutation],[col_birthdate],[col_employer_id],[col_address_line1],[col_address_line2],[col_city],[col_state],[col_zipcode],[col_phone],[col_workphone],[col_cell],[col_guarantor_class],[col_email],[col_preferred_contact],[col_billing_type],[col_status],[col_suspended_date],[col_practice_id],[col_practice],[col_employer],[col_country],[col_patient_firstname],[col_patient_lastname],[col_patient_middlename],[col_patient_status],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:05:57.604Z',
-                            '2020-05-12T01:05:57.604Z',
+                            '2020-05-18T02:37:00.644Z',
+                            '2020-05-18T02:37:00.644Z',
                             'D24510',
                             'Advanced Dental Center of Florence' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_guarantor_id] = modified.[col_guarantor_id],original.[col_patient_id] = modified.[col_patient_id],original.[col_patient] = modified.[col_patient],original.[col_guarantor_s_patient_id] = modified.[col_guarantor_s_patient_id],original.[col_guarantor_s_patient] = modified.[col_guarantor_s_patient],original.[col_firstname] = modified.[col_firstname],original.[col_middlename] = modified.[col_middlename],original.[col_lastname] = modified.[col_lastname],original.[col_preferred_name] = modified.[col_preferred_name],original.[col_salutation] = modified.[col_salutation],original.[col_birthdate] = modified.[col_birthdate],original.[col_employer_id] = modified.[col_employer_id],original.[col_address_line1] = modified.[col_address_line1],original.[col_address_line2] = modified.[col_address_line2],original.[col_city] = modified.[col_city],original.[col_state] = modified.[col_state],original.[col_zipcode] = modified.[col_zipcode],original.[col_phone] = modified.[col_phone],original.[col_workphone] = modified.[col_workphone],original.[col_cell] = modified.[col_cell],original.[col_guarantor_class] = modified.[col_guarantor_class],original.[col_email] = modified.[col_email],original.[col_preferred_contact] = modified.[col_preferred_contact],original.[col_billing_type] = modified.[col_billing_type],original.[col_status] = modified.[col_status],original.[col_suspended_date] = modified.[col_suspended_date],original.[col_practice_id] = modified.[col_practice_id],original.[col_practice] = modified.[col_practice],original.[col_employer] = modified.[col_employer],original.[col_country] = modified.[col_country],original.[col_patient_firstname] = modified.[col_patient_firstname],original.[col_patient_lastname] = modified.[col_patient_lastname],original.[col_patient_middlename] = modified.[col_patient_middlename],original.[col_patient_status] = modified.[col_patient_status],
-                        original.updated_at = '2020-05-12T01:05:57.604Z',
+                        original.updated_at = '2020-05-18T02:37:00.644Z',
                         original.office_id = 'D24510',
                         practice_name = 'Advanced Dental Center of Florence'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_guarantor_id],modified.[col_patient_id],modified.[col_patient],modified.[col_guarantor_s_patient_id],modified.[col_guarantor_s_patient],modified.[col_firstname],modified.[col_middlename],modified.[col_lastname],modified.[col_preferred_name],modified.[col_salutation],modified.[col_birthdate],modified.[col_employer_id],modified.[col_address_line1],modified.[col_address_line2],modified.[col_city],modified.[col_state],modified.[col_zipcode],modified.[col_phone],modified.[col_workphone],modified.[col_cell],modified.[col_guarantor_class],modified.[col_email],modified.[col_preferred_contact],modified.[col_billing_type],modified.[col_status],modified.[col_suspended_date],modified.[col_practice_id],modified.[col_practice],modified.[col_employer],modified.[col_country],modified.[col_patient_firstname],modified.[col_patient_lastname],modified.[col_patient_middlename],modified.[col_patient_status],
-                        '2020-05-12T01:05:57.604Z',
-                        '2020-05-12T01:05:57.604Z',
+                        '2020-05-18T02:37:00.644Z',
+                        '2020-05-18T02:37:00.644Z',
                         'D24510',
                         'Advanced Dental Center of Florence'
                         );

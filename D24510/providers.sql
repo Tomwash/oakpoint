@@ -3,9 +3,9 @@
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/D24510/providers.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D24510/providers.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,8 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_provider_id],[col_firstname],[col_lastname],[col_address_line1],[col_address_line2],[col_city],[col_state],[col_zipcode],[col_country],[col_phone],[col_provider_type],[col_specialty],[col_practice_id],[col_practice],[col_patients],[col_appointments],[col_status],[col_provider_account_id],[col_state_id],[col_tax_identification_number],[col_medicaid_id],[col_drug_id],[col_national_provider_identifier],[col_email],[col_birthdate],[col_hire_date],[col_graduated_date],[col_initials],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-                            '2020-05-12T01:06:51.522Z',
-                            '2020-05-12T01:06:51.522Z',
+                            '2020-05-18T02:38:00.266Z',
+                            '2020-05-18T02:38:00.266Z',
                             'D24510',
                             'Advanced Dental Center of Florence' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +40,7 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_provider_id] = modified.[col_provider_id],original.[col_firstname] = modified.[col_firstname],original.[col_lastname] = modified.[col_lastname],original.[col_address_line1] = modified.[col_address_line1],original.[col_address_line2] = modified.[col_address_line2],original.[col_city] = modified.[col_city],original.[col_state] = modified.[col_state],original.[col_zipcode] = modified.[col_zipcode],original.[col_country] = modified.[col_country],original.[col_phone] = modified.[col_phone],original.[col_provider_type] = modified.[col_provider_type],original.[col_specialty] = modified.[col_specialty],original.[col_practice_id] = modified.[col_practice_id],original.[col_practice] = modified.[col_practice],original.[col_patients] = modified.[col_patients],original.[col_appointments] = modified.[col_appointments],original.[col_status] = modified.[col_status],original.[col_provider_account_id] = modified.[col_provider_account_id],original.[col_state_id] = modified.[col_state_id],original.[col_tax_identification_number] = modified.[col_tax_identification_number],original.[col_medicaid_id] = modified.[col_medicaid_id],original.[col_drug_id] = modified.[col_drug_id],original.[col_national_provider_identifier] = modified.[col_national_provider_identifier],original.[col_email] = modified.[col_email],original.[col_birthdate] = modified.[col_birthdate],original.[col_hire_date] = modified.[col_hire_date],original.[col_graduated_date] = modified.[col_graduated_date],original.[col_initials] = modified.[col_initials],
-                        original.updated_at = '2020-05-12T01:06:51.522Z',
+                        original.updated_at = '2020-05-18T02:38:00.266Z',
                         original.office_id = 'D24510',
                         practice_name = 'Advanced Dental Center of Florence'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_provider_id],modified.[col_firstname],modified.[col_lastname],modified.[col_address_line1],modified.[col_address_line2],modified.[col_city],modified.[col_state],modified.[col_zipcode],modified.[col_country],modified.[col_phone],modified.[col_provider_type],modified.[col_specialty],modified.[col_practice_id],modified.[col_practice],modified.[col_patients],modified.[col_appointments],modified.[col_status],modified.[col_provider_account_id],modified.[col_state_id],modified.[col_tax_identification_number],modified.[col_medicaid_id],modified.[col_drug_id],modified.[col_national_provider_identifier],modified.[col_email],modified.[col_birthdate],modified.[col_hire_date],modified.[col_graduated_date],modified.[col_initials],
-                        '2020-05-12T01:06:51.522Z',
-                        '2020-05-12T01:06:51.522Z',
+                        '2020-05-18T02:38:00.266Z',
+                        '2020-05-18T02:38:00.266Z',
                         'D24510',
                         'Advanced Dental Center of Florence'
                         );
