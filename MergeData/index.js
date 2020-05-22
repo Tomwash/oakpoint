@@ -26,45 +26,43 @@ module.exports = async function (context, req) {
         const office = authorizedPractices[0].items[i];
         const { office_id, secret_key, practice_name } = office;
 
-        // if ([
-        //     'D18336',
-        //     'D22072',
-        //     'D24510',
-        //     'D34723',
-        //     // 'O22046',
-        //     'V15543'
-        // ].includes(office_id)) {
-        //     context.log(`Skipping ${office_id}`);
-        //     continue;
-        // }
+        if ([
+            'D18336',
+            'D22072',
+            'D24510',
+            // 'D34723',
+            // 'O22046',
+            // 'V15543'
+        ].includes(office_id)) {
+            context.log(`Skipping ${office_id}`);
+            continue;
+        }
 
         // get request key
         context.log(`Retrieving Request Key for Office ${office_id}`);
         const request_key = await sikkaApi.requestKey(office_id, secret_key);
+        console.log(request_key);
 
-        // get practice's authorized endpoints
-        context.log(`Retrieving Authorized Endpoints For ${office_id}, Using The Request Key`);
-        const data_check = await sikkaApi.dataCheck(request_key.request_key);
+        // get practice's request key info
+        context.log(`Retrieving Request Key Info ${office_id}, Using The Request Key`);
+        const requestKeyInfo = await sikkaApi.requestKeyInfo(request_key.request_key);
+        const listOfAccessibleApis = requestKeyInfo.scope.split(',')
 
         // loop through each authorized endpoint for this practice and drop the data in sql
         // This is each table they are authorizde to use. At this point, execute merge query.
-        for (let dchk = 0; dchk < data_check[0].total_count; dchk += 1) {
-            const { api, total_records, update_time } = data_check[0].items[dchk]
-            if (total_records == "0") {
-                context.log(`There were no records for the ${api} api, total records: ${total_records}, last updated: ${update_time}`);
+        for (let j = 0; j < listOfAccessibleApis.length; j += 1) {
+            if (['start', 'end'].includes(listOfAccessibleApis[j])) {
                 continue;
             }
-
-            const resourceResponse = await sikkaApi.getBaseResourceByRequestKey(request_key.request_key, api, 5000, 0, false);
-            const tableName = api.replace('/ ', '__');
+            const resourceResponse = await sikkaApi.getSingleResourceByRequestKey(request_key.request_key, listOfAccessibleApis[j]);
+            const tableName = listOfAccessibleApis[j].replace('/ ', '__');
+            console.log(tableName);
 
             // if (tableName === 'appointments') { context.log(resourceResponse); } else {
             //     continue;
             // }
 
-            const data = resourceResponse[0];
-
-            if (data) {
+            if (resourceResponse.href) {
 
                 const currentDate = new Date();
                 const currentIsoDateTime = currentDate.toISOString();
@@ -76,7 +74,7 @@ module.exports = async function (context, req) {
                 let updateQuery = '';
                 let withOpenJson = '';
                 let mergeQueryInsertValuesFromModified = '';
-                Object.keys(data).forEach(key => {
+                Object.keys(resourceResponse).forEach(key => {
                     insertColumns += `[col_${key}],`;
                     columnsStringCreateTable += `col_${key} varchar(8000),`;
                     updateQuery += `original.[col_${key}] = modified.[col_${key}],`;
@@ -112,9 +110,9 @@ module.exports = async function (context, req) {
                         declare @json nvarchar(max) = 
                         (
                             SELECT
-                                CAST(BulkColumn AS NVARCHAR(MAX)) AS JsonData 
+                               '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/${office_id}/${tableName}.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/${office_id}/${tableName}.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -181,9 +179,8 @@ module.exports = async function (context, req) {
                         // context.log(tableCreateQuery);
                         await pool.query(tableCreateQuery);
 
-                        context.log(`Creating file for upload ${new Date().toISOString()}`)
                         // Create file for office to store the JSON response and prep for upload
-                        const fileLocation = `${office_id}`;
+                        const fileLocation = `sql/${office_id}`;
                         const fileName = `${tableName}.sql`
                         const pathToFile = `${fileLocation}/${fileName}`
 
