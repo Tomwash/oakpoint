@@ -9,7 +9,11 @@ module.exports = {
         options: {
             encrypt: true
         },
-        requestTimeout: 60000
+        requestTimeout: 1000000,
+        pool: {
+            max: 1000,
+            idleTimeoutMillis: 1000000
+        }
     },
     azureStorageConfig: {
         connectionString: process.env['AzureWebJobsStorage'],
