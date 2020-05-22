@@ -5,7 +5,7 @@
                             SELECT
                                '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                             FROM 
-                            OPENROWSET(BULK 'oakpoint-data/streams/D34723/patient_statuses.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                            OPENROWSET(BULK 'oakpoint-data/streams/D34723/appointment_statuses.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                         ); 
 
                         -- Declare Temp Table
@@ -18,13 +18,8 @@
                         INSERT INTO @TableView
                             ([col_href],[col_status],[col_practice_id],[col_practice],created_at, updated_at, office_id, practice_name)
                             SELECT *,
-<<<<<<< HEAD:sql/D34723/patient_statuses.sql
-                            '2020-05-21T02:18:58.920Z',
-                            '2020-05-21T02:18:58.920Z',
-=======
-                            '2020-05-18T04:49:46.079Z',
-                            '2020-05-18T04:49:46.079Z',
->>>>>>> master:sql/D34723/patient_statuses.sql
+                            '2020-05-18T04:49:24.149Z',
+                            '2020-05-18T04:49:24.149Z',
                             'D34723',
                             'Carolina Smiles' FROM OPENJSON(@json)  
                             WITH  
@@ -39,17 +34,13 @@
                         )
                         DELETE FROM CTE WHERE RN > 1
                          
-                        MERGE patient_statuses original
+                        MERGE appointment_statuses original
                         USING @TableView modified
                         ON original.col_href = modified.col_href
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_status] = modified.[col_status],original.[col_practice_id] = modified.[col_practice_id],original.[col_practice] = modified.[col_practice],
-<<<<<<< HEAD:sql/D34723/patient_statuses.sql
-                        original.updated_at = '2020-05-21T02:18:58.920Z',
-=======
-                        original.updated_at = '2020-05-18T04:49:46.079Z',
->>>>>>> master:sql/D34723/patient_statuses.sql
+                        original.updated_at = '2020-05-18T04:49:24.149Z',
                         original.office_id = 'D34723',
                         practice_name = 'Carolina Smiles'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -60,13 +51,8 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_status],modified.[col_practice_id],modified.[col_practice],
-<<<<<<< HEAD:sql/D34723/patient_statuses.sql
-                        '2020-05-21T02:18:58.920Z',
-                        '2020-05-21T02:18:58.920Z',
-=======
-                        '2020-05-18T04:49:46.079Z',
-                        '2020-05-18T04:49:46.079Z',
->>>>>>> master:sql/D34723/patient_statuses.sql
+                        '2020-05-18T04:49:24.149Z',
+                        '2020-05-18T04:49:24.149Z',
                         'D34723',
                         'Carolina Smiles'
                         );

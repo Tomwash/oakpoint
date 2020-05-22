@@ -18,8 +18,13 @@
                         INSERT INTO @TableView
                             ([col_href],[col_category],[col_key_performance_indicator],[col_displayname],[col_type],created_at, updated_at, office_id, practice_name)
                             SELECT *,
+<<<<<<< HEAD
                             '2020-05-21T02:18:45.867Z',
                             '2020-05-21T02:18:45.867Z',
+=======
+                            '2020-05-18T04:49:40.722Z',
+                            '2020-05-18T04:49:40.722Z',
+>>>>>>> master
                             'D34723',
                             'Carolina Smiles' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +45,11 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_href] = modified.[col_href],original.[col_category] = modified.[col_category],original.[col_key_performance_indicator] = modified.[col_key_performance_indicator],original.[col_displayname] = modified.[col_displayname],original.[col_type] = modified.[col_type],
+<<<<<<< HEAD
                         original.updated_at = '2020-05-21T02:18:45.867Z',
+=======
+                        original.updated_at = '2020-05-18T04:49:40.722Z',
+>>>>>>> master
                         original.office_id = 'D34723',
                         practice_name = 'Carolina Smiles'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +60,13 @@
                         VALUES
                         (
                             modified.[col_href],modified.[col_category],modified.[col_key_performance_indicator],modified.[col_displayname],modified.[col_type],
+<<<<<<< HEAD
                         '2020-05-21T02:18:45.867Z',
                         '2020-05-21T02:18:45.867Z',
+=======
+                        '2020-05-18T04:49:40.722Z',
+                        '2020-05-18T04:49:40.722Z',
+>>>>>>> master
                         'D34723',
                         'Carolina Smiles'
                         );

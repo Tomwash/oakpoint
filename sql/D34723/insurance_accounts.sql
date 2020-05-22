@@ -18,8 +18,13 @@
                         INSERT INTO @TableView
                             ([col_http_code],[col_http_code_desc],[col_allowed_methods],[col_allow_origin],[col_api_version],[col_href],[col_api_description],[col_parameters],[col_apis],created_at, updated_at, office_id, practice_name)
                             SELECT *,
+<<<<<<< HEAD
                             '2020-05-21T02:18:23.481Z',
                             '2020-05-21T02:18:23.481Z',
+=======
+                            '2020-05-18T04:49:37.387Z',
+                            '2020-05-18T04:49:37.387Z',
+>>>>>>> master
                             'D34723',
                             'Carolina Smiles' FROM OPENJSON(@json)  
                             WITH  
@@ -40,7 +45,11 @@
                         WHEN MATCHED 
                             THEN UPDATE SET 
                             original.[col_http_code] = modified.[col_http_code],original.[col_http_code_desc] = modified.[col_http_code_desc],original.[col_allowed_methods] = modified.[col_allowed_methods],original.[col_allow_origin] = modified.[col_allow_origin],original.[col_api_version] = modified.[col_api_version],original.[col_href] = modified.[col_href],original.[col_api_description] = modified.[col_api_description],original.[col_parameters] = modified.[col_parameters],original.[col_apis] = modified.[col_apis],
+<<<<<<< HEAD
                         original.updated_at = '2020-05-21T02:18:23.481Z',
+=======
+                        original.updated_at = '2020-05-18T04:49:37.387Z',
+>>>>>>> master
                         original.office_id = 'D34723',
                         practice_name = 'Carolina Smiles'
                         WHEN NOT MATCHED BY TARGET THEN
@@ -51,8 +60,13 @@
                         VALUES
                         (
                             modified.[col_http_code],modified.[col_http_code_desc],modified.[col_allowed_methods],modified.[col_allow_origin],modified.[col_api_version],modified.[col_href],modified.[col_api_description],modified.[col_parameters],modified.[col_apis],
+<<<<<<< HEAD
                         '2020-05-21T02:18:23.481Z',
                         '2020-05-21T02:18:23.481Z',
+=======
+                        '2020-05-18T04:49:37.387Z',
+                        '2020-05-18T04:49:37.387Z',
+>>>>>>> master
                         'D34723',
                         'Carolina Smiles'
                         );
