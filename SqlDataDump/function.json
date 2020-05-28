@@ -1,19 +1,16 @@
 {
   "bindings": [
     {
-      "authLevel": "function",
-      "type": "httpTrigger",
-      "direction": "in",
-      "name": "req",
-      "methods": [
-        "get",
-        "post"
-      ]
+      "schedule": "0 0 0 * * 1-5",
+      "name": "myTimer",
+      "type": "timerTrigger",
+      "direction": "in"
     },
     {
-      "type": "http",
+      "name": "$return",
+      "type": "sendGrid",
       "direction": "out",
-      "name": "res"
+      "apiKey": "AzureWebJobsSendGridApiKey"
     }
   ]
 }
