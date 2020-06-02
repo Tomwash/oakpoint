@@ -37,7 +37,8 @@ module.exports = async function (context, myTimer) {
         return;
     }
 
-    // await sikkaApi.clearBlobs();
+    context.log('Clearing Blobs');
+    await sikkaApi.clearBlobs();
 
     context.log(`Authorized Practices: ${authorizedPractices[0].total_count}`);
     const authorizedPracticesLimit = authorizedPractices[0].total_count;
@@ -47,10 +48,16 @@ module.exports = async function (context, myTimer) {
         context.log(`LOOPING THROUGH PRACTICES, Index ${i} of ${authorizedPracticesLimit} ${new Date().toISOString()}`)
 
         const office = authorizedPractices[0].items[i];
-        const { office_id, secret_key } = office;
+        const { office_id, secret_key, practice_name } = office;
 
         context.log(`Retrieving Request Key for Office ${office_id}`);
-        const request_key = await sikkaApi.requestKey(office_id, secret_key);
+        let request_key;
+        try {
+            request_key = await sikkaApi.requestKey(office_id, secret_key);
+        } catch (err) {
+            context.log(err);
+            throw err;
+        }
 
         if (!request_key) {
             context.log('Request Key returned no response');
@@ -79,7 +86,7 @@ module.exports = async function (context, myTimer) {
             let resourceResponse;
             try {
                 context.log(`FETCHING RESOURCE ${new Date().toISOString()}`)
-                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `${tableName}.json`);
+                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `streams/${office_id}/${tableName}.json`, { office_id, practice_name, tableName });
             } catch (err) {
                 context.log(err);
             }

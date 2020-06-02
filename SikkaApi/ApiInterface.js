@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const queryString = require('query-string');
 const getStream = require('into-stream');
 const { v4: uuidV4 } = require('uuid');
+const sql = require("mssql");
 
 const {
     BlobServiceClient
@@ -10,6 +11,7 @@ const {
 const config = require('../config');
 
 const {
+    azureSqlConfig,
     azureStorageConfig: {
         connectionString,
         containerName
@@ -72,24 +74,21 @@ async function dataCheck(request_key) {
     return get(url);
 }
 
-async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri, blobLocation, limit = 5000, offset = 0) {
+async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri, blobLocation, metadata = {}) {
 
     let data;
-    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit, offset })}`;
+    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 0 })}`;
     try {
+        console.log("Fetching data")
         data = await get(url);
     } catch (err) {
         console.log("WARNING: ERROR IN MAIN REQUEST, PROBABLY A 204", data, err)
-        return [];
+        return;
     }
 
     if (data[0]) {
-        const items = data[0].items.map((item, index) => {
-            // if (item && index === 0) {
-            //     createMergeQuery(item, )
-            // }
-            return JSON.stringify(item)
-        });
+        const items = data[0].items.map(item => JSON.stringify(item));
+        console.log("Creating merge query")
         const listOfBlockIds = [];
 
         let blockId;
@@ -97,7 +96,13 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
         blockId = Buffer.from(uuidV4()).toString('base64');
 
         console.log('writing stream in staged blocks before loop', items.length);
-        await writeStreamInStagedBlocks(blockId, items.join(','), blobLocation);
+        let appendString = '';
+        if (data[0].pagination) {
+            if (data[0].pagination.next) {
+                appendString = ',';
+            }
+        }
+        await writeStreamInStagedBlocks(blockId, items.join(',') + appendString, blobLocation);
         listOfBlockIds.push(blockId);
 
         if (data[0].pagination) {
@@ -110,13 +115,11 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
                     if (data[0].items.length === 0) {
                         throw new Error('no items found')
                     }
-                    const itemsInLoop = data[0].items.map((item) => {
-                        return JSON.stringify(item)
-                    });
+                    const itemsInLoop = data[0].items.map(item => JSON.stringify(item));
                     console.log('writing stream in staged blocks inside loop', itemsInLoop.length);
 
                     blockId = Buffer.from(uuidV4()).toString('base64');
-                    const stageResult = await writeStreamInStagedBlocks(blockId, itemsInLoop.join(','), blobLocation);
+                    await writeStreamInStagedBlocks(blockId, itemsInLoop.join(',') + (data[0].pagination.next ? ',' : ''), blobLocation);
                     listOfBlockIds.push(blockId);
                 } catch (err) {
                     console.log(err);
@@ -124,13 +127,14 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
             }
         }
 
-        const commitBlocksResult = await commitStagedBlocks(listOfBlockIds, blobLocation);
+        await commitStagedBlocks(listOfBlockIds, blobLocation);
+        await createMergeQuery(data[0].items[0], metadata);
         console.log(`commit of blockid list successful:\n\n ${listOfBlockIds}\n\n\n commit block response \n\n`);
 
-        return [];
+        return;
     }
 
-    return [];
+    return;
 
 }
 
@@ -157,7 +161,12 @@ async function writeStreamInStagedBlocks(blockId, jsonString, blobLocation) {
     const containerClient = await blobServiceClient.getContainerClient(containerName);
 
     // Get blob block client, used modifying blobs in azure storage
-    const blockBlobClient = await containerClient.getBlockBlobClient(blobLocation)
+    const blockBlobClient = await containerClient.getBlockBlobClient(blobLocation);
+
+    const exists = await blockBlobClient.exists();
+    if (!exists) {
+        await containerClient
+    }
 
     return await blockBlobClient.stageBlock(blockId, jsonString, jsonString.length | 0);
 }
@@ -181,20 +190,24 @@ async function clearBlobs() {
 
     // // Get a reference to a container
     const containerClient = await blobServiceClient.getContainerClient(containerName);
-    const blobs = containerClient.listBlobsFlat();
-    for await (const blob of blobs) {
-        if (blob.toString().includes('streams')) { continue; }
-        await containerClient.deleteBlob(blob);
+
+    for await (const blob of containerClient.listBlobsFlat()) {
+        if (blob.name.toString().includes('streams') || blob.name.toString().includes('sql')) { continue; }
+        await containerClient.deleteBlob(blob.name);
     }
 
 
 }
 
 
-async function createMergeQuery(resourceResponse, tableName, office_id, practice_name) {
+async function createMergeQuery(resourceResponse, metadata) {
+
+    const { office_id, tableName, practice_name } = metadata;
+
+    const pool = new sql.ConnectionPool(azureSqlConfig);
 
     const fileLocation = `sql`;
-    const fileName = `${tableName}.sql`
+    const fileName = `${office_id}/${tableName}.sql`
     const pathToFile = `${fileLocation}/${fileName}`
 
     // Create the BlobServiceClient object which will be used to create a container client
@@ -206,10 +219,7 @@ async function createMergeQuery(resourceResponse, tableName, office_id, practice
     // Get blob block client, used modifying blobs in azure storage
     const blockBlobClient = await containerClient.getBlockBlobClient(pathToFile)
 
-    const blobExists = await blockBlobClient.exists();
-
-    if (blobExists) { return };
-
+    console.log(resourceResponse.href)
     if (resourceResponse.href) {
 
         // ======================================== //
@@ -225,6 +235,7 @@ async function createMergeQuery(resourceResponse, tableName, office_id, practice
         let updateQuery = '';
         let withOpenJson = '';
         let mergeQueryInsertValuesFromModified = '';
+        // const columnLength = '8000';
         Object.keys(resourceResponse).forEach(key => {
             insertColumns += `[col_${key}],`;
             columnsStringCreateTable += `col_${key} varchar(8000),`;
@@ -330,7 +341,6 @@ async function createMergeQuery(resourceResponse, tableName, office_id, practice
                             ON ${tableName} (office_id, practice_name, created_at, updated_at)
                             END
                             `
-                const pool = new sql.ConnectionPool(azureSqlConfig);
                 await pool.connect();
                 try {
                     await pool.query(tableCreateQuery);
@@ -344,9 +354,8 @@ async function createMergeQuery(resourceResponse, tableName, office_id, practice
             }
         }
         catch (err) {
-            context.log(err);
+            console.log(err);
         }
-
 
         // ======================================== //
         // ======================================== //
@@ -354,12 +363,35 @@ async function createMergeQuery(resourceResponse, tableName, office_id, practice
         // ======================================== //
         // ======================================== //
         // Create file for office to store the JSON response and prep for upload
+        // const blobExists = await blockBlobClient.exists();
 
+        // if (blobExists) { return };
+        console.log('uploading query file');
         await blockBlobClient.upload(query.toString(), query.toString().length);
+
+        console.log('Connecting to sql')
+        try {
+            await pool.connect();
+        } catch (err) {
+            console.log('error opening connection to sql caught here')
+            return;
+        }
+
+        console.log('executing query')
+        pool.query(query).catch((err) => {
+            console.log('ERROR IN QUERY CAUGHT HERE')
+        });
+
+        setTimeout(async () => {
+            console.log('sql connection closed')
+            try {
+                await pool.close();
+            } catch (err) {
+                console.log('error closing connection to sql caught here')
+            }
+        }, 1000)
     }
 }
-
-
 
 module.exports = {
     authorizedPractices,
