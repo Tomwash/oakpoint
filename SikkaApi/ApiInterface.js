@@ -80,7 +80,7 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
     var loaded_startdate;
     var loaded_enddate;
 
-    startDate.setDate(startDate.getDate() - 5);
+    startDate.setDate(startDate.getDate() - 3);
     endDate.setDate(endDate.getDate());
 
     loaded_startdate = `${startDate.getFullYear()}-${('0' + (startDate.getMonth() + 1)).slice(-2)}-${('0' + startDate.getDate()).slice(-2)}`
