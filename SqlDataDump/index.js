@@ -38,7 +38,7 @@ module.exports = async function (context, myTimer) {
     }
 
     context.log('Clearing Blobs');
-    await sikkaApi.clearBlobs();
+    // await sikkaApi.clearBlobs();
 
     context.log(`Authorized Practices: ${authorizedPractices[0].total_count}`);
     const authorizedPracticesLimit = authorizedPractices[0].total_count;
@@ -86,7 +86,7 @@ module.exports = async function (context, myTimer) {
             let resourceResponse;
             try {
                 context.log(`FETCHING RESOURCE ${new Date().toISOString()}`)
-                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `streams/${office_id}/${tableName}.json`, { office_id, practice_name, tableName });
+                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `streams-recent/${office_id}/${tableName}.json`, { office_id, practice_name, tableName });
             } catch (err) {
                 context.log(err);
             }

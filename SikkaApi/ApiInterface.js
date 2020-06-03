@@ -75,11 +75,22 @@ async function dataCheck(request_key) {
 }
 
 async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri, blobLocation, metadata = {}) {
+    var startDate = new Date();
+    var endDate = new Date();
+    var loaded_startdate;
+    var loaded_enddate;
 
+    startDate.setDate(startDate.getDate() - 5);
+    endDate.setDate(endDate.getDate());
+
+    loaded_startdate = `${startDate.getFullYear()}-${('0' + (startDate.getMonth() + 1)).slice(-2)}-${('0' + startDate.getDate()).slice(-2)}`
+
+    loaded_enddate = `${endDate.getFullYear()}-${('0' + (endDate.getMonth() + 1)).slice(-2)}-${('0' + endDate.getDate()).slice(-2)}`
     let data;
-    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 0 })}`;
+    const url = `${baseUrl}${version}${resourceUri}?${queryString.stringify({ request_key, limit: 5000, offset: 0, loaded_startdate, loaded_enddate })}`;
     try {
         console.log("Fetching data")
+        console.log(url);
         data = await get(url);
     } catch (err) {
         console.log("WARNING: ERROR IN MAIN REQUEST, PROBABLY A 204", data, err)
@@ -128,7 +139,7 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
         }
 
         await commitStagedBlocks(listOfBlockIds, blobLocation);
-        await createMergeQuery(data[0].items[0], metadata);
+        await createMergeQuery(data[0].items[0], metadata, blobLocation);
         console.log(`commit of blockid list successful:\n\n ${listOfBlockIds}\n\n\n commit block response \n\n`);
 
         return;
@@ -192,7 +203,7 @@ async function clearBlobs() {
     const containerClient = await blobServiceClient.getContainerClient(containerName);
 
     for await (const blob of containerClient.listBlobsFlat()) {
-        if (blob.name.toString().includes('streams') || blob.name.toString().includes('sql')) { continue; }
+        if (blob.name.toString().includes('streams') || (blob.name.toString().includes('sql') && blob.name.toString().includes('recent'))) { continue; }
         await containerClient.deleteBlob(blob.name);
     }
 
@@ -200,13 +211,13 @@ async function clearBlobs() {
 }
 
 
-async function createMergeQuery(resourceResponse, metadata) {
+async function createMergeQuery(resourceResponse, metadata, blobLocation) {
 
     const { office_id, tableName, practice_name } = metadata;
 
     const pool = new sql.ConnectionPool(azureSqlConfig);
 
-    const fileLocation = `sql`;
+    const fileLocation = `sql-recent`;
     const fileName = `${office_id}/${tableName}.sql`
     const pathToFile = `${fileLocation}/${fileName}`
 
@@ -274,7 +285,7 @@ async function createMergeQuery(resourceResponse, metadata) {
                                 SELECT
                                    '[' + CAST(BulkColumn AS NVARCHAR(MAX)) + ']' AS JsonData 
                                 FROM 
-                                OPENROWSET(BULK 'oakpoint-data/streams/${office_id}/${tableName}.json', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
+                                OPENROWSET(BULK 'oakpoint-data/${blobLocation}', DATA_SOURCE = 'OakpointDataV1', SINGLE_CLOB) AS AzureBlob 
                             ); 
     
                             -- Declare Temp Table
