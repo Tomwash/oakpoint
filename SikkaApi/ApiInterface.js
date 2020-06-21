@@ -22,7 +22,8 @@ const {
         version,
         app_id,
         app_key
-    }
+    },
+    tableCompositeKeys
 } = config;
 
 async function get(url) {
@@ -118,11 +119,12 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
 
         if (data[0].pagination) {
             while (data[0].pagination.next) {
-                const nextUrl = `${data[0].pagination.next}&request_key=${request_key}`;
+                const nextUrl = `${data[0].pagination.next}&${queryString.stringify({ request_key, loaded_startdate, loaded_enddate })}`;
                 try {
                     console.log('getting data', nextUrl);
 
                     data = await get(nextUrl);
+
                     if (data[0].items.length === 0) {
                         throw new Error('no items found')
                     }
@@ -132,6 +134,8 @@ async function getBaseResourceByRequestKeyAndDumpToBlob(request_key, resourceUri
                     blockId = Buffer.from(uuidV4()).toString('base64');
                     await writeStreamInStagedBlocks(blockId, itemsInLoop.join(',') + (data[0].pagination.next ? ',' : ''), blobLocation);
                     listOfBlockIds.push(blockId);
+
+                    console.log(`loop ${data[0].offset} of ${data[0].total_count / data[0].limit} complete, block ${blockId} has been staged`, itemsInLoop.length);
                 } catch (err) {
                     console.log(err);
                 }
@@ -230,7 +234,6 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
     // Get blob block client, used modifying blobs in azure storage
     const blockBlobClient = await containerClient.getBlockBlobClient(pathToFile)
 
-    console.log(resourceResponse.href)
     if (resourceResponse.href) {
 
         // ======================================== //
@@ -277,6 +280,21 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
         mergeQueryInsertValuesFromModified = mergeQueryInsertValuesFromModified.slice(0, -1)
         withOpenJson = withOpenJson.slice(0, -1);
 
+        let dynamicComparators = '';
+        let dynamicMergeQueryOnStatement = '';
+        if (tableCompositeKeys[`${tableName}`]) {
+            tableCompositeKeys[`${tableName}`].map((value) => {
+                const colPlusKey = `col_${value}`
+                dynamicComparators += `${colPlusKey}, `
+                dynamicMergeQueryOnStatement += `original.${colPlusKey} = modified.${colPlusKey} AND `
+            })
+            dynamicComparators = dynamicComparators.slice(0, -2);
+            dynamicMergeQueryOnStatement = dynamicMergeQueryOnStatement.slice(0, -5);
+        } else {
+            dynamicComparators = 'col_href';
+            dynamicMergeQueryOnStatement = 'original.col_href = modifed.col_href';
+        }
+
         const query =
             `
                             -- Declare JSON Variable
@@ -292,7 +310,8 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
                             Declare @TableView TABLE 
                             ( 
                                 ID bigint NOT NULL PRIMARY KEY IDENTITY(1, 1),
-                                ${columnsStringCreateTable}
+                                ${columnsStringCreateTable},
+                                INDEX IX3 NONCLUSTERED(${dynamicComparators})
                             ); 
     
                             INSERT INTO @TableView
@@ -308,27 +327,28 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
                                 );
     
                             WITH CTE AS(
-                                SELECT col_href,
-                                    RN = ROW_NUMBER()OVER(PARTITION BY col_href ORDER BY col_href)
+                                SELECT ${dynamicComparators},
+                                    RN = ROW_NUMBER()OVER(PARTITION BY ${dynamicComparators} ORDER BY ${dynamicComparators})
                                 FROM @TableView
                             )
+                            
                             DELETE FROM CTE WHERE RN > 1
     
                             MERGE ${tableName} original
                             USING @TableView modified
-                            ON original.col_href = modified.col_href
+                            ON ${dynamicMergeQueryOnStatement}
                             WHEN MATCHED 
                                 THEN UPDATE SET 
                                 ${updateQuery}
                             WHEN NOT MATCHED BY TARGET THEN
-                            INSERT  
-                            (
-                                ${insertColumns}
-                            )
-                            VALUES
-                            (
-                                ${mergeQueryInsertValuesFromModified}
-                            );
+                                INSERT  
+                                (
+                                    ${insertColumns}
+                                )
+                                VALUES
+                                (
+                                    ${mergeQueryInsertValuesFromModified}
+                                );
                         `
         // ======================================== //
         // ================ Execute =============== //
@@ -345,8 +365,8 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
                                 ${columnsStringCreateTable}
                             );
     
-                            CREATE UNIQUE INDEX col_href
-                            ON ${tableName} (col_href)
+                            CREATE UNIQUE INDEX ${tableName}_unique
+                            ON ${tableName} (${dynamicComparators})
     
                             CREATE INDEX non_unique_office_metadata
                             ON ${tableName} (office_id, practice_name, created_at, updated_at)

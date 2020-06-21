@@ -1,18 +1,4 @@
-
-const sql = require("mssql");
-const {
-    BlobServiceClient
-} = require('@azure/storage-blob');
-
 const { sikkaApi } = require('../SikkaApi');
-const config = require('../config');
-const {
-    azureSqlConfig,
-    azureStorageConfig: {
-        connectionString,
-        containerName
-    }
-} = config;
 
 module.exports = async function (context, myTimer) {
     var timeStamp = new Date().toISOString();
@@ -37,7 +23,7 @@ module.exports = async function (context, myTimer) {
         return;
     }
 
-    context.log('Clearing Blobs');
+    // context.log('Clearing Blobs');
     // await sikkaApi.clearBlobs();
 
     context.log(`Authorized Practices: ${authorizedPractices[0].total_count}`);
