@@ -1,18 +1,13 @@
-const fs = require('fs');
-const { BlobServiceClient } = require('@azure/storage-blob');
-
 const { sikkaApi } = require('../SikkaApi');
-const config = require('../config');
 
-const {
-    azureStorageConfig: {
-        connectionString,
-        containerName
-    },
-    tables
-} = config;
+module.exports = async function (context, myTimer) {
+    var timeStamp = new Date().toISOString();
 
-module.exports = async function (context) {
+    if (myTimer.IsPastDue) {
+        context.log('Node is running late!');
+    }
+    context.log('Node timer trigger function started!', timeStamp);
+
     context.log('JavaScript Authorized Practices function processed a request.');
 
     let authorizedPractices;
@@ -28,29 +23,27 @@ module.exports = async function (context) {
         return;
     }
 
+    // context.log('Clearing Blobs');
+    // await sikkaApi.clearBlobs();
+
     context.log(`Authorized Practices: ${authorizedPractices[0].total_count}`);
-    const authorizedPracticesLimit = (authorizedPractices[0].total_count / 5000) < 1 ? (authorizedPractices[0].total_count % 5000) : 5000;
+    const authorizedPracticesLimit = authorizedPractices[0].total_count;
 
     context.log(`STARTING JOB ${new Date().toISOString()}`)
-    for (let i = 0; i < authorizedPracticesLimit; i += 1) {
+    for (let i = 0; i < authorizedPractices[0].total_count; i += 1) {
         context.log(`LOOPING THROUGH PRACTICES, Index ${i} of ${authorizedPracticesLimit} ${new Date().toISOString()}`)
 
         const office = authorizedPractices[0].items[i];
         const { office_id, secret_key, practice_name } = office;
-        // if ([
-        //     // 'D18336',
-        //     // 'D22072',
-        //     // 'D24510',
-        //     // 'D34723',
-        //     // // 'O22046',
-        //     // // 'V15543'
-        // ].includes(office_id)) {
-        //     context.log(`Skipping ${office_id}`);
-        //     continue;
-        // }
-        // get request key
+
         context.log(`Retrieving Request Key for Office ${office_id}`);
-        const request_key = await sikkaApi.requestKey(office_id, secret_key);
+        let request_key;
+        try {
+            request_key = await sikkaApi.requestKey(office_id, secret_key);
+        } catch (err) {
+            context.log(err);
+            throw err;
+        }
 
         if (!request_key) {
             context.log('Request Key returned no response');
@@ -76,25 +69,27 @@ module.exports = async function (context) {
             const tableName = listOfAccessibleApis[j].replace('/', '__');
             context.log(tableName);
 
-            // // This is used to more easily step through tables we care about
-            // if (!tables.includes(tableName)) {
-            //     context.log(`skipping table ${tableName}`);
-            //     continue;
-            // }
-
             let resourceResponse;
             try {
                 context.log(`FETCHING RESOURCE ${new Date().toISOString()}`)
-                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `streams/${office_id}/${tableName}.json`);
+                resourceResponse = await sikkaApi.getBaseResourceByRequestKeyAndDumpToBlob(request_key.request_key, listOfAccessibleApis[j], `streams-recent/${office_id}/${tableName}.json`, { office_id, practice_name, tableName });
             } catch (err) {
                 context.log(err);
             }
         }
     }
 
-    context.log('Process Complete:');
-    context.res = {
-        status: 200,
-        body: '\n\nsuccess\n\n'
+    context.log('Process Complete, firing off email');
+
+    var message = {
+        "personalizations": [{ "to": [{ "email": "tommyjohn2006@gmail.com" }, { "email": "asif.asim212@gmail.com" }, { "email": "asharma@oakpoint.us" }] }],
+        from: { email: "asharma@oakpoint.us" },
+        subject: "ETL Complete",
+        content: [{
+            type: 'text/plain',
+            value: 'ETL ran successfully'
+        }]
     };
+
+    context.done(null, message);
 }
