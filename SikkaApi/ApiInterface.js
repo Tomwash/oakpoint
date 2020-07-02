@@ -348,7 +348,8 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
                                 VALUES
                                 (
                                     ${mergeQueryInsertValuesFromModified}
-                                );
+                                ) 
+                            ${tableName === 'accounts_receivables' ? generateWhenNotMatchedBySourceString() : ';'}
                         `
         // ======================================== //
         // ================ Execute =============== //
@@ -421,6 +422,10 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
                 console.log('error closing connection to sql caught here')
             }
         }, 1000)
+    }
+    function generateWhenNotMatchedBySourceString() {
+        return 'WHEN NOT MATCHED BY SOURCE AND original.office_id IN(SELECT office_id FROM @TableView) THEN DELETE;'
+
     }
 }
 
