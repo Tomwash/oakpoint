@@ -292,7 +292,7 @@ async function createMergeQuery(resourceResponse, metadata, blobLocation) {
             dynamicMergeQueryOnStatement = dynamicMergeQueryOnStatement.slice(0, -5);
         } else {
             dynamicComparators = 'col_href';
-            dynamicMergeQueryOnStatement = 'original.col_href = modifed.col_href';
+            dynamicMergeQueryOnStatement = 'original.col_href = modified.col_href';
         }
 
         const query =
